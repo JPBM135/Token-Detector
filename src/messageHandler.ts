@@ -1,6 +1,7 @@
 import { APIUser, ButtonStyle, ComponentType, Message } from 'discord.js';
 import fetch from 'node-fetch';
 import { tokenRegex } from './constants.js';
+import { elipsis } from './utils.js';
 
 export async function messageHandler(message: Message): Promise<void> {
 	if (!message.content || message.author.bot) return;
@@ -43,23 +44,38 @@ export async function messageHandler(message: Message): Promise<void> {
 		parameters.push('', "Although this is token isn't valid anymore, you should be more careful!!");
 	}
 
-	await message.reply({
-		content: parameters.join('\n'),
-		components:
-			user.bot && isValid
-				? [
-						{
-							type: ComponentType.ActionRow,
-							components: [
-								{
-									type: ComponentType.Button,
-									label: 'Reset your bot Token',
-									url: `https://discord.com/developers/applications/${tokenInfo.id}/bot`,
-									style: ButtonStyle.Link,
-								},
-							],
-						},
-				  ]
-				: [],
-	});
+	if (isValid && message.deletable) {
+		await message.channel.send(
+			elipsis(
+				[
+					`**Filtered message from ${message.author.tag}**`,
+					'',
+					message.content.replace(tokenRegex, '[ <Filtered Token> ]'),
+				].join('\n'),
+				2048,
+			),
+		);
+	}
+
+	await message
+		.reply({
+			content: parameters.join('\n'),
+			components:
+				user.bot && isValid
+					? [
+							{
+								type: ComponentType.ActionRow,
+								components: [
+									{
+										type: ComponentType.Button,
+										label: 'Reset your bot Token',
+										url: `https://discord.com/developers/applications/${tokenInfo.id}/bot`,
+										style: ButtonStyle.Link,
+									},
+								],
+							},
+					  ]
+					: [],
+		})
+		.then(() => (message.deletable && isValid ? message.delete() : null));
 }
