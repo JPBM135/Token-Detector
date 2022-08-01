@@ -1,0 +1,1 @@
+export const tokenRegex = /(?<snowflake>[\w-]{24,26})\.(?<timestamp>[\w-]{6})\.(?<hmac>[\w-]{27,38})/;
